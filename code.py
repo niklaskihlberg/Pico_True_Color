@@ -6,7 +6,6 @@ import rotaryio
 
 from adafruit_midi.pitch_bend import PitchBend
 
-# midi = adafruit_midi.MIDI(midi_in=usb_midi.ports[0])
 midi = adafruit_midi.MIDI(
     midi_in=usb_midi.ports[0], in_channel=0, midi_out=usb_midi.ports[1], out_channel=0
 )
@@ -18,7 +17,7 @@ enc_last_position = 0
 
 while True:
 
-    # ENCODER 1 ### LOOP ####
+    # ENCODER 1 ### HUE ####
     if enc_last_position is None or encoder.position != enc_last_position:
 
         if encoder.position >= 1639:       # 16383
