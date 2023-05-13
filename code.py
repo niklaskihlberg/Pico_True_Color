@@ -21,21 +21,46 @@ last_e1b = True
 e1r = rotaryio.IncrementalEncoder(board.GP0, board.GP1)
 last_e1r = 0
 
+def delay():
+    return time.sleep(0.025) # 25ms skall vara 40Hz (vilket ändå är DMX update rate taket...)
+
 while True:
 
     # ENCODER 1 ### HUE #### 0 # 8192 # 16383 #####
     if e1r.position != last_e1r:
 
-        if e1b.value: # "NORMAL MODE"
-            if e1r.position > last_e1r: e1r.position = e1r.position + 9
-            else: e1r.position = e1r.position - 9
+        if e1b.value: # "NORMAL MODE" # ≈ 70 Varv / 360 (1 grad i taget...)
+            if e1r.position > last_e1r:
+                e1r.position = e1r.position + 9
+                e1r.position = (e1r.position + 16384) % 16384
+                midi.send(PitchBend(e1r.position), channel=0)
+            else:
+                e1r.position = e1r.position - 9
+                e1r.position = (e1r.position + 16384) % 16384
+                midi.send(PitchBend(e1r.position), channel=0)
 
-        else:  # ENCODER PRESSED
-            if e1r.position > last_e1r: e1r.position = e1r.position + 249
-            else: e1r.position = e1r.position - 249
+        else:  # ENCODER PRESSED # inc 45 loops 20 ≈ 5 Varv / 360 (20 grader i taget...)
+            fade_increment = 45
+            fade_loops = 20
+            if e1r.position > last_e1r:
+                def fade_up():
+                    e1r.position = e1r.position + fade_increment
+                    e1r.position = (e1r.position + 16384) % 16384
+                    midi.send(PitchBend(e1r.position), channel=0)
+                    delay()
+                for _ in range(fade_loops):
+                    fade_up()
 
-        e1r.position = (e1r.position + 16384) % 16384
-        midi.send(PitchBend(e1r.position), channel=0)
+            else:
+                def fade_down():
+                    e1r.position = e1r.position - fade_increment
+                    e1r.position = (e1r.position + 16384) % 16384
+                    midi.send(PitchBend(e1r.position), channel=0)
+                    delay()
+
+                for _ in range(fade_loops):
+                    fade_down()
+
         e1b_last = e1b.value
         last_e1r = e1r.position
 
@@ -43,6 +68,6 @@ while True:
         print("Button: ", e1b.value)
         print(" ")
 
-    time.sleep(0.001)
+    # time.sleep(0.001)
     # time.sleep(0.025)
     # time.sleep(0.5)
